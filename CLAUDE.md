@@ -1,47 +1,45 @@
-# CLAUDE.md
+# CLAUDE.md - CLI Implementation Branch
 
-AI-facing guidance for Claude Code when working with WalrusCLI.
+AI-facing guidance for Claude Code when working on **CLI implementation only**.
 
-## Project Overview
+## ⚠️ BRANCH SCOPE RESTRICTIONS
 
-**WalrusCLI** - TypeScript/Node.js CLI tool for deploying websites to Walrus Sites (decentralized web hosting on Sui blockchain). Simplifies the complex manual deployment process into intuitive commands.
+**YOU ARE ON: `feature/cli-implementation`**
 
-## Reference Codebase
+### ✅ YOU CAN MODIFY:
+- `apps/cli/**` (PRIMARY SCOPE)
+- `packages/core/**` (Primary owner - you own the core APIs)
+- Root config files (with caution): `package.json`, `pnpm-workspace.yaml`
+- Documentation: `docs/**`, `AGENTS.md`, `plans/**`
 
-**PRIMARY REFERENCE:** Local CCS codebase at `./ccs/`
+### ❌ YOU CANNOT TOUCH:
+- `apps/desktop/**` (Desktop team's exclusive scope)
+- `.gitignore`, `.github/**` (without team discussion)
 
-This project mirrors the architecture and patterns from [kaitranntt/ccs](https://github.com/kaitranntt/ccs) (Claude Code Switch). The CCS codebase is a battle-tested CLI tool with similar requirements:
-- Binary management across platforms
-- Interactive setup wizards
-- Configuration generation
-- Health diagnostics
-- Terminal UI components
+### ⚠️ COORDINATION REQUIRED:
+- **Changes to `packages/core/` public APIs** must be communicated to Desktop team
+- **Breaking changes to shared interfaces** require approval from both teams
+- **New dependencies** in `packages/core/` must be justified (bloat affects Desktop)
 
-**IMPORTANT:** Before implementing ANY feature, study the corresponding CCS files documented in:
-- `./plans/reports/brainstorm-260117-0855-walruscli-ccs-reference-mapping.md` (Complete reference mapping)
-- `./AGENTS.md` (Code standards and patterns)
+## Current Task (Week 1-3)
 
-**Key CCS Files to Study:**
-```
-ccs/src/commands/setup-command.ts           # Interactive wizard
-ccs/src/cliproxy/binary/binary-manager.ts   # Binary downloads
-ccs/src/cliproxy/config-generator.ts        # Auto-config
-ccs/src/management/doctor.ts                # Health checks
-ccs/src/utils/prompt.ts                     # Interactive prompts
-ccs/src/utils/ui/                           # Terminal UI
-```
+**Phase 1-3 from `apps/cli/BRANCH_README.md`:**
+1. Binary management (site-builder download, verification, platform detection)
+2. Init command (interactive wizard, config generation, encrypted keystore)
+3. Deploy command (diff detection, blob upload, object ID publishing)
 
-## Core Principles
+**Desktop team dependency:** They need stable `packages/core/` APIs by Week 4. Focus on API design.
 
-### Technical Excellence
-- **YAGNI**: Build only what's needed for MVP
-- **KISS**: Simple solutions over clever ones
-- **DRY**: Single source of truth
+## Reference Documentation
 
-### User Experience
-- **CLI-First**: All features accessible via terminal
-- **Progressive Disclosure**: Simple by default, power features available
-- **Helpful Errors**: Every error suggests a fix
+**MANDATORY READING BEFORE CODING:**
+- `./apps/cli/BRANCH_README.md` - Your task breakdown (7 phases)
+- `./AGENTS.md` - Code standards, CCS file mapping, pre-commit rules
+- `./docs/TEAM_WORKFLOW.md` - Branch workflow, file ownership
+- `./docs/requirements/PRD.md` - Product requirements
+- `./plans/reports/brainstorm-260117-0855-walruscli-ccs-reference-mapping.md` - CCS reference
+
+**CCS Reference:** Local folder at `./ccs/`
 
 ## Quality Gates (MANDATORY)
 
@@ -53,33 +51,6 @@ npm run validate            # Step 3: Verify ALL (MUST PASS)
 ```
 
 **Why this order:** `validate` runs `format:check` which only verifies. If it fails, you skipped Step 1.
-
-## Development Workflow
-
-### Setup
-```bash
-git clone <repo>
-npm install
-npm run build
-```
-
-### Development
-```bash
-npm run dev                 # Build + watch mode
-npm test                    # Run tests
-npm run validate            # Full quality check
-```
-
-### Testing
-```bash
-npm test                    # All tests
-npm run test:unit           # Unit tests only
-npm run test:integration    # Integration tests
-
-# Single test
-npm test -- tests/unit/binary/downloader.test.ts
-npm test -- -t "downloads binary successfully"
-```
 
 ## Code Standards
 
@@ -106,42 +77,53 @@ console.log('⚠️ Warning: Low disk space');
 
 ## Architecture
 
-### Project Structure
+### Project Structure (CLI Focus)
 ```
-src/
-├── commands/           # CLI commands (init, deploy, versions, domain)
-├── binary/            # site-builder binary management
-├── config/            # Configuration loading/generation
-├── wallet/            # Encrypted keystore management
-├── deploy/            # Deployment logic
-├── versions/          # Version tracking
-├── diagnostics/       # Health checks
-├── utils/             # Shared utilities
-└── errors/            # Error handling
+apps/cli/
+├── src/
+│   ├── commands/           # CLI commands (init, deploy, versions, diagnose)
+│   │   ├── init.ts
+│   │   ├── deploy.ts
+│   │   ├── versions.ts
+│   │   └── diagnose.ts
+│   ├── utils/             # CLI-specific utilities
+│   │   ├── prompts.ts     # Interactive prompts
+│   │   ├── progress.ts    # Progress bars
+│   │   └── ui.ts          # Terminal UI components
+│   ├── index.ts           # CLI entry point (Commander.js)
+│   └── errors.ts          # CLI-specific error handling
+├── tests/                 # CLI command tests
+└── package.json
+
+packages/core/
+├── src/
+│   ├── walrus/            # YOU OWN THIS
+│   │   ├── binary-manager.ts  # Binary download/verification
+│   │   └── client.ts          # Walrus API client
+│   ├── sui/               # YOU OWN THIS
+│   │   └── index.ts       # Sui blockchain client
+│   ├── site/              # YOU OWN THIS
+│   │   └── index.ts       # Site building logic
+│   ├── config/            # YOU OWN THIS
+│   │   └── index.ts       # Config loading/validation
+│   └── logging/           # YOU OWN THIS
+│       └── index.ts       # Shared logger
+└── package.json
 ```
 
 ### MVP Scope (Option B)
 1. `walrus init` - Interactive setup wizard
 2. `walrus deploy` - Deploy/update websites with smart diff
 3. `walrus versions --list/--rollback` - Version management
-4. `walrus domain` - Tauri UI for SuiNS domain management
-5. `walrus diagnose` - System health checks
+4. `walrus diagnose` - System health checks
 
-**Deferred to v2.0:** CI/CD workflows, analytics dashboard
-
-## Security Requirements
-
-1. **Never log sensitive data** - Private keys, passwords
-2. **Encrypt keystore** - AES-256-CBC with PBKDF2
-3. **File permissions** - Keystore files `0600`
-4. **Input validation** - Sanitize before shell execution
-5. **No hardcoded secrets** - Use environment variables
+**Note:** Domain management (`walrus domain`) is Desktop team's scope.
 
 ## Common Patterns (from CCS)
 
 ### CLI Command Structure
 ```typescript
-export async function myCommand(options: Options): Promise<void> {
+export async function initCommand(options: InitOptions): Promise<void> {
   try {
     validateOptions(options);
     await runPreflightChecks();
@@ -181,23 +163,13 @@ const tasks = new Listr([
 await tasks.run();
 ```
 
-## Documentation Requirements
+## Security Requirements
 
-**Update these when changing features:**
-- [ ] Command help text (`--help`)
-- [ ] README.md (user-facing changes)
-- [ ] AGENTS.md (code patterns)
-- [ ] Type definitions in `src/types/`
-
-## Common Mistakes (AVOID)
-
-| Mistake | Consequence | Fix |
-|---------|-------------|-----|
-| Running `validate` without `format` first | format:check fails | Run `npm run format` first |
-| Using emojis in output | Breaks terminals | Use `[OK]`, `[!]`, `[X]` |
-| Using `any` type | No type safety | Use `unknown` or specific type |
-| Non-conventional commits | CI fails | Use `feat:`, `fix:`, etc. |
-| Hardcoded values | Hard to maintain | Use constants or config |
+1. **Never log sensitive data** - Private keys, passwords
+2. **Encrypt keystore** - AES-256-CBC with PBKDF2
+3. **File permissions** - Keystore files `0600`
+4. **Input validation** - Sanitize before shell execution
+5. **No hardcoded secrets** - Use environment variables
 
 ## Pre-Commit Checklist
 
@@ -206,25 +178,78 @@ await tasks.run();
 - [ ] `npm run validate` - All checks pass
 
 **Code:**
-- [ ] Conventional commit format
+- [ ] Conventional commit format (`feat(cli):`, `feat(core):`)
 - [ ] Tests added/updated if behavior changed
 - [ ] No `any` types, no non-null assertions
 - [ ] ASCII only (no emojis)
+- [ ] No modifications to `apps/desktop/**`
 
-**Documentation:**
-- [ ] Command help updated if CLI changed
-- [ ] README.md updated if user-facing
+**Coordination:**
+- [ ] If `packages/core/` API changed, notify Desktop team
+- [ ] If breaking change, document in commit message
 
-## Error Handling Principles
+## Commit Message Format
 
-- Validate early, fail fast with clear messages
-- Show available options on mistakes
-- Never leave broken state
-- Suggest fixes for recoverable errors
+```bash
+# CLI changes
+feat(cli): add init command with interactive wizard
+fix(cli): handle missing binary gracefully
+
+# Core changes
+feat(core): add WalrusBinaryManager class
+fix(core): prevent race condition in config loader
+
+# Both
+feat(cli,core): implement encrypted keystore with AES-256
+```
+
+## Daily Workflow
+
+1. **Start day:**
+   ```bash
+   git checkout feature/cli-implementation
+   git pull origin feature/cli-implementation
+   git merge origin/main  # Get latest from main
+   ```
+
+2. **During work:**
+   - Focus on `apps/cli/**` and `packages/core/**`
+   - Check `apps/cli/BRANCH_README.md` for task list
+   - Run tests frequently: `npm test`
+
+3. **Before commit:**
+   ```bash
+   npm run format
+   npm run lint:fix
+   npm run validate  # MUST PASS
+   git add .
+   git commit -m "feat(cli): descriptive message"
+   ```
+
+4. **End of day:**
+   ```bash
+   git push origin feature/cli-implementation
+   ```
+
+5. **Weekly sync:**
+   - Merge `main` into your branch to stay updated
+   - Coordinate with Desktop team on `packages/core/` changes
 
 ## Questions?
 
-1. **Code patterns:** Check `./ccs/` reference codebase
-2. **Requirements:** See `./docs/requirements/PRD.md` and `./docs/requirements/main_function.md`
-3. **Architecture:** See `./plans/reports/brainstorm-260117-0855-walruscli-ccs-reference-mapping.md`
-4. **Standards:** See `./AGENTS.md`
+1. **Task breakdown:** Check `./apps/cli/BRANCH_README.md`
+2. **Code patterns:** Check `./ccs/` reference codebase
+3. **Requirements:** See `./docs/requirements/PRD.md` and `./docs/requirements/main_function.md`
+4. **Architecture:** See `./plans/reports/brainstorm-260117-0855-walruscli-ccs-reference-mapping.md`
+5. **Standards:** See `./AGENTS.md`
+6. **Team workflow:** See `./docs/TEAM_WORKFLOW.md`
+
+## Remember
+
+**You are building the CLI application and owning the core business logic.**
+
+Desktop team depends on your `packages/core/` APIs being stable and well-documented. Prioritize:
+1. **Clean API design** - They'll consume your interfaces
+2. **Thorough testing** - Bugs affect both teams
+3. **Clear documentation** - TSDoc comments for all exported functions
+4. **Stable releases** - Avoid breaking changes after Week 3
