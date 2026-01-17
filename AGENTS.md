@@ -12,37 +12,28 @@ AI agent guidance for WalrusCLI development. Read this before making code change
 
 ```bash
 # Setup
-npm install                  # Install dependencies
-npm run build               # Compile TypeScript to dist/
+pnpm install                  # Install dependencies
+pnpm run build               # Compile all packages
 
 # Development
-npm run dev                 # Build + watch mode
-npm run typecheck           # TypeScript type checking (no emit)
+pnpm run dev                 # Build + watch mode
+pnpm --filter "@walrus/core" typecheck # Type checking for core
 
 # Code Quality
-npm run lint                # Run ESLint
-npm run lint:fix            # Fix auto-fixable issues
-npm run format              # Format with Prettier
-npm run format:check        # Check formatting only
-npm run validate            # Full check: typecheck + lint:fix + format:check + test
+pnpm run lint                # Run ESLint
+pnpm run lint:fix            # Fix auto-fixable issues
+pnpm run format              # Format with Prettier
+pnpm run validate            # Full check: typecheck + lint:fix + format:check + test
 
 # Testing
-npm test                    # Run all tests
-npm run test:unit           # Unit tests only
-npm run test:integration    # Integration tests
-npm run test:watch          # Watch mode
+pnpm test                    # Run all tests
+pnpm --filter "@walrus/core" test:unit # Core unit tests
 
-# Single Test (Vitest pattern)
-npm test -- tests/unit/binary/downloader.test.ts
-npm test -- -t "downloads binary successfully"
-
-# Pre-commit (MANDATORY ORDER)
-npm run format              # Step 1: Fix formatting
-npm run lint:fix            # Step 2: Fix lint
-npm run validate            # Step 3: Verify all (MUST PASS)
+# Single Test
+pnpm test -- packages/core/tests/walrus-binary.test.ts
 ```
 
-**CRITICAL:** Run `format` → `lint:fix` → `validate` IN THAT ORDER before committing.
+**CRITICAL:** Run `pnpm run format` → `pnpm run lint:fix` → `pnpm run validate` IN THAT ORDER before committing.
 
 ## Code Standards
 
@@ -273,21 +264,25 @@ console.log(success('[OK] Deployed successfully'));
 
 ## File Organization
 
+### Monorepo Structure
+
 ```
-src/
-├── commands/           # CLI commands (init, deploy, versions, domain)
-├── binary/            # site-builder binary management
-├── config/            # Configuration loading/generation
-├── wallet/            # Encrypted keystore management
-├── deploy/            # Deployment logic (diff, upload, publish)
-├── versions/          # Version tracking and rollback
-├── diagnostics/       # Health checks (walrus diagnose)
-├── utils/             # Shared utilities
-│   ├── prompt.ts      # Interactive prompts
-│   ├── progress.ts    # Progress bars
-│   └── ui/            # Terminal UI components
-├── errors/            # Error handling
-└── types/             # TypeScript type definitions
+packages/core/          # @walrus/core
+├── src/
+│   ├── walrus/         # Binary management & site-builder wrappers
+│   ├── sui/            # Sui client & blockchain interactions
+│   ├── config/         # Configuration handling (zod)
+│   ├── site/           # Site deployment logic
+│   ├── logging/        # Winston-based logging
+│   └── index.ts        # Public API
+└── tests/              # Core logic tests
+
+apps/cli/               # @walrus/cli
+├── bin/                # Executable entry point
+└── src/                # Command implementations (init, deploy, etc.)
+
+apps/desktop/           # @walrus/desktop
+└── src-tauri/          # Tauri configuration & Rust core
 ```
 
 ## Reference CCS Patterns
@@ -308,6 +303,44 @@ src/
 - Interactive prompts
 
 ## Common Patterns
+
+### Binary Wrapper (Child Process)
+
+Instead of reimplementing binary logic, wrap it.
+
+```typescript
+import { spawn } from 'child_process';
+
+async function runBinaryCommand(
+  args: string[],
+  env: Record<string, string>
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const child = spawn('site-builder', args, {
+      env: { ...process.env, ...env },
+      shell: true
+    });
+
+    let stdout = '';
+    let stderr = '';
+
+    child.stdout.on('data', (data) => {
+      stdout += data;
+      // Real-time parsing if needed
+      if (data.includes('New site object ID:')) {
+        // ...
+      }
+    });
+
+    child.stderr.on('data', (data) => stderr += data);
+
+    child.on('close', (code) => {
+      if (code === 0) resolve(stdout);
+      else reject(new Error(stderr));
+    });
+  });
+}
+```
 
 ### CLI Command Structure
 

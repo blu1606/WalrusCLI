@@ -45,13 +45,42 @@ AI-facing guidance for Claude Code when working on **CLI implementation only**.
 
 **Pre-Commit Sequence:**
 ```bash
-npm run format              # Step 1: Fix formatting
-npm run lint:fix            # Step 2: Fix linting
-npm run validate            # Step 3: Verify ALL (MUST PASS)
+pnpm run format              # Step 1: Fix formatting
+pnpm run lint:fix            # Step 2: Fix linting
+pnpm run validate            # Step 3: Verify ALL (MUST PASS)
 ```
 
 **Why this order:** `validate` runs `format:check` which only verifies. If it fails, you skipped Step 1.
 
+<<<<<<< Updated upstream
+=======
+## Development Workflow
+
+### Setup
+```bash
+git clone <repo>
+pnpm install
+pnpm run build
+```
+
+### Development
+```bash
+pnpm run dev                 # Build + watch mode (all packages)
+pnpm test                    # Run tests
+pnpm run validate            # Full quality check
+```
+
+### Testing
+```bash
+pnpm test                    # All tests
+pnpm run test:unit           # Unit tests only
+pnpm run test:integration    # Integration tests
+
+# Single test
+pnpm test -- packages/core/tests/walrus-binary.test.ts
+```
+
+>>>>>>> Stashed changes
 ## Code Standards
 
 **Full standards in AGENTS.md** - Read before coding.
@@ -77,6 +106,7 @@ console.log('⚠️ Warning: Low disk space');
 
 ## Architecture
 
+<<<<<<< Updated upstream
 ### Project Structure (CLI Focus)
 ```
 apps/cli/
@@ -109,15 +139,63 @@ packages/core/
 │   └── logging/           # YOU OWN THIS
 │       └── index.ts       # Shared logger
 └── package.json
+=======
+### Project Structure (Monorepo)
+
+The project is organized as a pnpm workspace:
+
+- **`packages/core`**: Core logic and shared utilities.
+  - `src/walrus/`: Walrus interactions and binary management.
+  - `src/sui/`: Sui blockchain interactions.
+  - `src/config/`: Configuration handling.
+  - `src/site/`: Site-specific logic.
+- **`apps/cli`**: Command-line interface.
+  - Depends on `@walrus/core`.
+  - Uses `commander` for command parsing.
+- **`apps/desktop`**: Tauri-based desktop application (In progress).
+
+```
+packages/core/src/
+├── walrus/            # binary management & wrappers
+├── sui/               # Sui client & interactions
+├── config/            # Configuration loading/generation
+├── site/              # Site deployment logic
+├── logging/           # Centralized logging
+└── index.ts           # Public API
+
+apps/cli/
+├── bin/               # Executable entry point
+└── src/               # Command implementations
+>>>>>>> Stashed changes
 ```
 
 ### MVP Scope (Option B)
 1. `walrus init` - Interactive setup wizard
-2. `walrus deploy` - Deploy/update websites with smart diff
+2. `walrus deploy` - Deploy/update websites using `site-builder` wrapper (Publish/Update logic)
 3. `walrus versions --list/--rollback` - Version management
 4. `walrus diagnose` - System health checks
 
 **Note:** Domain management (`walrus domain`) is Desktop team's scope.
+
+## Integration Strategy (Best Practices)
+
+### Binary Management
+- **Resolution Order:**
+  1. System PATH (`site-builder`)
+  2. Local Cache (`~/.walrus/bin/site-builder`)
+- **Action:** If system binary exists, use it. If not, download managed version.
+
+### Configuration & State
+- **Hybrid Model:**
+  - `walrus.config.json`: Static build config (dir, epochs)
+  - `.env`: Dynamic state (`WALRUS_SITE_OBJECT_ID`)
+- **Reasoning:** Improves DX by exposing Site ID to frontend code automatically.
+
+### Deployment Logic
+- **Wrap vs Reimplement:** Always prefer wrapping official binary commands (`publish`, `update`) over reimplementing complex logic (diffing, merkle trees).
+- **Pre-flight Check:** Always verify WAL balance before running `site-builder`. If balance is 0, offer to run `get-wal` (Suibase) or provide instructions.
+- **Parsing:** Use Regex to reliably extract data from CLI stdout.
+  - Pattern: `/New site object ID: (.+)/`
 
 ## Common Patterns (from CCS)
 

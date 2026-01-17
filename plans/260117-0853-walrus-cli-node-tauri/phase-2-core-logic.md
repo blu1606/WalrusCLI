@@ -1,7 +1,7 @@
 ---
 title: "Phase 2: Core Logic"
 description: "Walrus binary wrapper, Sui integration, and config management."
-status: pending
+status: completed
 priority: P1
 effort: 8d
 depends_on: ["Phase 1"]
@@ -18,40 +18,39 @@ depends_on: ["Phase 1"]
 ## Tasks
 
 ### 2.1 Sui Integration (`packages/core`)
-- [ ] Install `@mysten/sui.js`.
-- [ ] Create `SuiClient` wrapper.
-- [ ] Implement `WalletManager` (load keypairs from keystore or private key).
-- [ ] Implement `TransactionBuilder` for common moves (e.g., registering a site).
-- [ ] **Implement Cost Analytics**:
-    - [ ] Fetch current Epoch gas prices and storage rebates via Sui RPC.
-    - [ ] Calculate and display Gross Cost vs. Net Cost (Storage Cost - Rebate) for deployments.
+- [x] Install `@mysten/sui.js`.
+- [x] Create `SuiClient` wrapper.
+- [x] Implement `WalletManager` (load keypairs from keystore or private key).
+- [x] Implement `TransactionBuilder` for common moves (e.g., registering a site).
+- [x] **Implement Cost Analytics**:
+    - [x] Fetch current Epoch gas prices and storage rebates via Sui RPC.
+    - [x] Calculate and display Gross Cost vs. Net Cost (Storage Cost - Rebate) for deployments.
+    - [ ] **Pre-flight Balance Check**:
+        - [ ] Implement logic to check WAL balance before deployment.
+        - [ ] Implement `get-wal` wrapper (Suibase integration) to swap SUI for WAL if needed.
 
 ### 2.2 Walrus Protocol Logic (`packages/core`)
-- [ ] Create `WalrusBinaryManager` class.
-    - [ ] Logic to detect OS/Arch.
-    - [ ] Logic to download the correct `walrus` binary release.
+- [ ] Update `WalrusBinaryManager`:
+    - [ ] Add `resolveBinary()`: Check system PATH first, then fallback to local `~/.walrus/bin`.
+    - [ ] Logic to download `site-builder` binary (not just `walrus`).
     - [ ] Logic to verify checksums (security).
-    - [ ] Logic to cache the binary in `~/.walrus/bin`.
-- [ ] Create `WalrusClient` (Wrapper around Binary).
-    - [ ] Implement `storeBlob(path)` -> executes `walrus store`.
-    - [ ] Implement `readBlob(blobId)` -> executes `walrus read`.
-    - [ ] Implement `deleteBlob(blobId)` -> executes `walrus delete`.
-    - [ ] Parse binary output (JSON/Text) into structured objects.
+- [ ] Create `SiteBuilderClient` (Wrapper around Binary).
+    - [ ] Implement `publish(distDir, epochs)` -> executes `site-builder publish`.
+    - [ ] Implement `update(distDir, objectId, epochs)` -> executes `site-builder update`.
+    - [ ] Implement `parseOutput(stdout)`: Use Regex to extract `New site object ID`.
 
 ### 2.3 Site Management Logic
 - [ ] Implement `SiteManager`.
-- [ ] **Implement Smart Diff Engine**:
-    - [ ] Calculate hashes (BLAKE3/SHA256) of local files.
-    - [ ] Compare with deployed site state/manifest to identify changed files.
-    - [ ] Generate diff (added, modified, deleted) to minimize uploads.
+- [ ] **Deprecate Custom Diff Engine**:
+    - [ ] Leverage `site-builder update` command which handles diffing and merkle tree updates natively.
 - [ ] **Implement Auto-MIME**:
-    - [ ] Integrate `mime-types` library in Node.js.
-    - [ ] Automatically detect and set correct `Content-Type` for each file upload.
-- [ ] Logic to generate the `site-object` structure for Sui.
+    - [ ] Integrate `mime-types` library in Node.js (Backup if binary fails auto-detect).
+- [ ] **State Persistence**:
+    - [ ] Implement `.env` file integration (Read/Write `WALRUS_SITE_OBJECT_ID`).
 
 ### 2.4 State & Configuration
 - [ ] Enhance `ConfigManager` to support environments (devnet, testnet, mainnet).
-- [ ] Implement local state tracking (`.walrus/state.json`) for deployments.
+- [x] Implement local state tracking (`.walrus/state.json`) for deployments.
 
 ## Technical Details
 - **Walrus Interaction**: We are NOT using a REST API directly. We are wrapping the official `walrus` Rust binary.
