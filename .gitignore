@@ -1,4 +1,5 @@
 # Reference codebase (contains secrets)
 ccs
 repomix-output.xml
+walrus-sites-deploy
 node_modules
