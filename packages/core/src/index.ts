@@ -6,4 +6,4 @@ export * from './walrus/cli-wrapper';
 export * from './walrus/site-builder-wrapper';
 export * from './sui';
 export * from './site';
-
+export * from './wallet/keystore';
