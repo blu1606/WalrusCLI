@@ -1,3 +1,4 @@
 # Reference codebase (contains secrets)
 ccs
 repomix-output.xml
+node_modules
