@@ -1,15 +1,24 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ConfigManager } from '../src/config';
+import { ConfigManager } from '../src/config/index';
 import fs from 'fs-extra';
 import yaml from 'js-yaml';
 
 vi.mock('fs-extra');
-vi.mock('js-yaml', () => ({
-    load: vi.fn(),
-    dump: vi.fn(),
-}));
-// Mock winston logger to avoid console noise and errors
-vi.mock('../src/logging', () => ({
+
+// Properly mock js-yaml
+vi.mock('js-yaml', () => {
+    return {
+        default: {
+            load: vi.fn(),
+            dump: vi.fn(),
+        },
+        load: vi.fn(),
+        dump: vi.fn(),
+    };
+});
+
+// Mock winston logger
+vi.mock('../src/logging/index', () => ({
     logger: {
         info: vi.fn(),
         warn: vi.fn(),
@@ -27,6 +36,8 @@ describe('ConfigManager', () => {
         fs.existsSync.mockReturnValue(false);
         // @ts-ignore
         yaml.dump.mockReturnValue('env: mainnet');
+        // @ts-ignore
+        yaml.load.mockReturnValue({ env: 'testnet' });
     });
 
     it('should load default config if file does not exist', () => {

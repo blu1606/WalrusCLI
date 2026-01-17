@@ -6,31 +6,37 @@ import axios from 'axios';
 import { logger } from '../logging';
 import { ConfigManager } from '../config';
 
+export type WalrusBinary = 'walrus' | 'site-builder';
+
 export class WalrusBinaryManager {
   private configManager: ConfigManager;
   private binDir: string;
-  private binaryName: string;
 
   constructor(configManager: ConfigManager) {
     this.configManager = configManager;
     this.binDir = path.join(os.homedir(), '.walrus', 'bin');
-    this.binaryName = process.platform === 'win32' ? 'walrus.exe' : 'walrus';
   }
 
-  async ensureBinaryExists(): Promise<string> {
-    const binaryPath = path.join(this.binDir, this.binaryName);
+  async ensureBinaryExists(binary: WalrusBinary): Promise<string> {
+    const binaryName = this.getBinaryName(binary);
+    const binaryPath = path.join(this.binDir, binaryName);
 
     if (fs.existsSync(binaryPath)) {
       // Check version or integrity if needed
       return binaryPath;
     }
 
-    logger.info('Walrus binary not found, downloading...');
-    await this.downloadBinary(binaryPath);
+    logger.info(`${binary} binary not found, downloading...`);
+    await this.downloadBinary(binary, binaryPath);
     return binaryPath;
   }
 
-  private async downloadBinary(destPath: string): Promise<void> {
+  private getBinaryName(binary: WalrusBinary): string {
+    const ext = process.platform === 'win32' ? '.exe' : '';
+    return `${binary}${ext}`;
+  }
+
+  private async downloadBinary(binary: WalrusBinary, destPath: string): Promise<void> {
     const platform = process.platform;
     const arch = process.arch;
 
@@ -42,21 +48,23 @@ export class WalrusBinaryManager {
     const baseUrl = 'https://storage.googleapis.com/mysten-walrus-binaries';
     // WARNING: These URLs are based on documentation examples and might need adjustment for specific versions
 
+    const binaryPrefix = binary === 'walrus' ? 'walrus' : 'site-builder';
+
     if (platform === 'linux' && arch === 'x64') {
-        url = `${baseUrl}/walrus-testnet-latest-ubuntu-x86_64`;
+        url = `${baseUrl}/${binaryPrefix}-testnet-latest-ubuntu-x86_64`;
     } else if (platform === 'darwin' && arch === 'arm64') {
-        url = `${baseUrl}/walrus-testnet-latest-macos-arm64`;
+        url = `${baseUrl}/${binaryPrefix}-testnet-latest-macos-arm64`;
     } else if (platform === 'darwin' && arch === 'x64') {
-        url = `${baseUrl}/walrus-testnet-latest-macos-x86_64`;
+        url = `${baseUrl}/${binaryPrefix}-testnet-latest-macos-x86_64`;
     } else if (platform === 'win32' && arch === 'x64') {
-        url = `${baseUrl}/walrus-testnet-latest-windows-x86_64.exe`;
+        url = `${baseUrl}/${binaryPrefix}-testnet-latest-windows-x86_64.exe`;
     } else {
         throw new Error(`Unsupported platform: ${platform}-${arch}`);
     }
 
     fs.ensureDirSync(this.binDir);
 
-    logger.info(`Downloading Walrus binary from ${url}`);
+    logger.info(`Downloading ${binary} binary from ${url}`);
 
     const response = await axios({
         method: 'get',
@@ -72,15 +80,16 @@ export class WalrusBinaryManager {
             if (platform !== 'win32') {
                 fs.chmodSync(destPath, 0o755);
             }
-            logger.info('Walrus binary downloaded successfully');
-            this.configManager.set('walrusBinaryPath', destPath);
+            logger.info(`${binary} binary downloaded successfully`);
+            const configKey = binary === 'walrus' ? 'walrusBinaryPath' : 'siteBuilderBinaryPath';
+            this.configManager.set(configKey, destPath);
             resolve();
         });
         writer.on('error', reject);
     });
   }
 
-  getBinaryPath(): string {
-      return path.join(this.binDir, this.binaryName);
+  getBinaryPath(binary: WalrusBinary): string {
+      return path.join(this.binDir, this.getBinaryName(binary));
   }
 }

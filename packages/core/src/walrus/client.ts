@@ -18,7 +18,7 @@ export class WalrusClient {
   }
 
   async storeBlob(filePath: string): Promise<StoreBlobResult> {
-    const binaryPath = await this.binaryManager.ensureBinaryExists();
+    const binaryPath = await this.binaryManager.ensureBinaryExists('walrus');
 
     if (!fs.existsSync(filePath)) {
         throw new Error(`File not found: ${filePath}`);
@@ -73,7 +73,7 @@ export class WalrusClient {
   }
 
   async readBlob(blobId: string, outputPath: string): Promise<void> {
-      const binaryPath = await this.binaryManager.ensureBinaryExists();
+      const binaryPath = await this.binaryManager.ensureBinaryExists('walrus');
 
       return new Promise((resolve, reject) => {
           // Command: walrus read <blobId> --out <outputPath>
@@ -95,7 +95,7 @@ export class WalrusClient {
   }
 
   async deleteBlob(blobId: string): Promise<void> {
-       const binaryPath = await this.binaryManager.ensureBinaryExists();
+       const binaryPath = await this.binaryManager.ensureBinaryExists('walrus');
 
        return new Promise((resolve, reject) => {
            // Command: walrus delete <blobId>

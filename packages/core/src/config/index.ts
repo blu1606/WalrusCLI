@@ -8,6 +8,7 @@ import { logger } from '../logging';
 const ConfigSchema = z.object({
   env: z.enum(['devnet', 'testnet', 'mainnet']).default('testnet'),
   walrusBinaryPath: z.string().optional(),
+  siteBuilderBinaryPath: z.string().optional(),
   suiRpcUrl: z.string().optional(),
   walrusAggregatorUrl: z.string().optional(),
   walrusPublisherUrl: z.string().optional(),
