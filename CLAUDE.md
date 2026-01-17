@@ -1,86 +1,55 @@
-# CLAUDE.md - CLI Implementation Branch
+# CLAUDE.md - Desktop UI Branch
 
-AI-facing guidance for Claude Code when working on **CLI implementation only**.
+AI-facing guidance for Claude Code when working on **Desktop UI implementation only**.
 
 ## ⚠️ BRANCH SCOPE RESTRICTIONS
 
-**YOU ARE ON: `feature/cli-implementation`**
+**YOU ARE ON: `feature/desktop-ui`**
 
 ### ✅ YOU CAN MODIFY:
-- `apps/cli/**` (PRIMARY SCOPE)
-- `packages/core/**` (Primary owner - you own the core APIs)
-- Root config files (with caution): `package.json`, `pnpm-workspace.yaml`
-- Documentation: `docs/**`, `AGENTS.md`, `plans/**`
+- `apps/desktop/**` (YOUR EXCLUSIVE SCOPE)
+- Documentation: `docs/**` (Desktop-specific docs only)
 
-### ❌ YOU CANNOT TOUCH:
-- `apps/desktop/**` (Desktop team's exclusive scope)
+### ❌ YOU CANNOT MODIFY:
+- `apps/cli/**` (CLI team's exclusive scope)
+- `packages/core/**` (CLI team owns - **READ-ONLY for you**)
+- Root configs: `package.json`, `pnpm-workspace.yaml` (without coordination)
 - `.gitignore`, `.github/**` (without team discussion)
 
-### ⚠️ COORDINATION REQUIRED:
-- **Changes to `packages/core/` public APIs** must be communicated to Desktop team
-- **Breaking changes to shared interfaces** require approval from both teams
-- **New dependencies** in `packages/core/` must be justified (bloat affects Desktop)
+### ⚠️ READ-ONLY DEPENDENCIES:
+- **`packages/core/`** - You can import and use these APIs but NEVER modify them
+- If you need changes to core APIs, create an issue and request CLI team to implement
+- Never write to `~/.walrus/*` files (CLI owns this state)
 
-## Current Task (Week 1-3)
+## Current Task (Week 4-5)
 
-**Phase 1-3 from `apps/cli/BRANCH_README.md`:**
-1. Binary management (site-builder download, verification, platform detection)
-2. Init command (interactive wizard, config generation, encrypted keystore)
-3. Deploy command (diff detection, blob upload, object ID publishing)
+**Phase 1-4 from `apps/desktop/BRANCH_README.md`:**
+1. Tauri v2 setup (Rust backend, React frontend)
+2. Domain management UI (SuiNS lookup, domain registration form)
+3. Deployment dashboard (deployment history, version rollback UI)
+4. Settings panel (wallet management, network switching)
 
-**Desktop team dependency:** They need stable `packages/core/` APIs by Week 4. Focus on API design.
+**CLI team dependency:** Wait until Week 4 when `packages/core/` APIs are stable.
 
 ## Reference Documentation
 
 **MANDATORY READING BEFORE CODING:**
-- `./apps/cli/BRANCH_README.md` - Your task breakdown (7 phases)
-- `./AGENTS.md` - Code standards, CCS file mapping, pre-commit rules
+- `./apps/desktop/BRANCH_README.md` - Your task breakdown (4 phases)
+- `./AGENTS.md` - Code standards, TypeScript rules
 - `./docs/TEAM_WORKFLOW.md` - Branch workflow, file ownership
 - `./docs/requirements/PRD.md` - Product requirements
-- `./plans/reports/brainstorm-260117-0855-walruscli-ccs-reference-mapping.md` - CCS reference
-
-**CCS Reference:** Local folder at `./ccs/`
+- `./docs/design-guidelines.md` - UI/UX guidelines
+- `./docs/wireframes/` - Desktop UI mockups
 
 ## Quality Gates (MANDATORY)
 
 **Pre-Commit Sequence:**
 ```bash
-pnpm run format              # Step 1: Fix formatting
-pnpm run lint:fix            # Step 2: Fix linting
-pnpm run validate            # Step 3: Verify ALL (MUST PASS)
+npm run format              # Step 1: Fix formatting
+npm run lint:fix            # Step 2: Fix linting
+npm run validate            # Step 3: Verify ALL (MUST PASS)
 ```
 
-**Why this order:** `validate` runs `format:check` which only verifies. If it fails, you skipped Step 1.
-
-<<<<<<< Updated upstream
-=======
-## Development Workflow
-
-### Setup
-```bash
-git clone <repo>
-pnpm install
-pnpm run build
-```
-
-### Development
-```bash
-pnpm run dev                 # Build + watch mode (all packages)
-pnpm test                    # Run tests
-pnpm run validate            # Full quality check
-```
-
-### Testing
-```bash
-pnpm test                    # All tests
-pnpm run test:unit           # Unit tests only
-pnpm run test:integration    # Integration tests
-
-# Single test
-pnpm test -- packages/core/tests/walrus-binary.test.ts
-```
-
->>>>>>> Stashed changes
 ## Code Standards
 
 **Full standards in AGENTS.md** - Read before coding.
@@ -89,165 +58,143 @@ pnpm test -- packages/core/tests/walrus-binary.test.ts
 - ✅ TypeScript strict mode
 - ✅ No `any` types (use `unknown` or specific types)
 - ✅ No non-null assertions (`!`)
-- ✅ ASCII only - NO EMOJIS
+- ✅ React functional components with hooks
+- ✅ Tailwind CSS for styling (no inline styles)
 - ✅ Conventional commits (`feat:`, `fix:`, etc.)
 
-### Output Format:
+### React Patterns:
 ```typescript
-// ✅ CORRECT
-console.log('[OK] Deployment successful');
-console.log('[!] Warning: Low disk space');
-console.log('[X] Error: Binary not found');
+// ✅ CORRECT - Functional component with TypeScript
+interface DomainFormProps {
+  onSubmit: (domain: string) => void;
+}
 
-// ❌ WRONG - NO EMOJIS
-console.log('✅ Deployment successful');
-console.log('⚠️ Warning: Low disk space');
+export const DomainForm: React.FC<DomainFormProps> = ({ onSubmit }) => {
+  const [domain, setDomain] = useState('');
+  
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit(domain);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Tailwind classes, no inline styles */}
+    </form>
+  );
+};
+
+// ❌ WRONG - Class component
+class DomainForm extends React.Component { }
+
+// ❌ WRONG - Inline styles
+<div style={{ color: 'red' }}>Error</div>
+```
+
+### Tauri Invoke Pattern:
+```typescript
+import { invoke } from '@tauri-apps/api/tauri';
+
+// Frontend calls Rust backend
+async function lookupDomain(name: string): Promise<DomainInfo> {
+  try {
+    const result = await invoke<DomainInfo>('lookup_suins_domain', { name });
+    return result;
+  } catch (error) {
+    console.error('Domain lookup failed:', error);
+    throw error;
+  }
+}
 ```
 
 ## Architecture
 
-<<<<<<< Updated upstream
-### Project Structure (CLI Focus)
+### Project Structure (Desktop Focus)
 ```
-apps/cli/
-├── src/
-│   ├── commands/           # CLI commands (init, deploy, versions, diagnose)
-│   │   ├── init.ts
-│   │   ├── deploy.ts
-│   │   ├── versions.ts
-│   │   └── diagnose.ts
-│   ├── utils/             # CLI-specific utilities
-│   │   ├── prompts.ts     # Interactive prompts
-│   │   ├── progress.ts    # Progress bars
-│   │   └── ui.ts          # Terminal UI components
-│   ├── index.ts           # CLI entry point (Commander.js)
-│   └── errors.ts          # CLI-specific error handling
-├── tests/                 # CLI command tests
+apps/desktop/
+├── src/                   # React frontend
+│   ├── components/
+│   │   ├── DomainManager/
+│   │   │   ├── DomainForm.tsx
+│   │   │   ├── DomainList.tsx
+│   │   │   └── index.ts
+│   │   ├── DeploymentDashboard/
+│   │   │   ├── HistoryTable.tsx
+│   │   │   ├── VersionSelector.tsx
+│   │   │   └── index.ts
+│   │   └── Settings/
+│   │       ├── WalletPanel.tsx
+│   │       ├── NetworkSelector.tsx
+│   │       └── index.ts
+│   ├── hooks/             # Custom React hooks
+│   │   ├── useDomain.ts
+│   │   └── useDeployment.ts
+│   ├── utils/             # Frontend utilities
+│   │   └── formatters.ts
+│   ├── styles/            # Tailwind CSS
+│   │   └── globals.css
+│   ├── App.tsx            # Main React app
+│   └── main.tsx           # Entry point
+├── src-tauri/             # Rust backend
+│   ├── src/
+│   │   ├── commands/      # Tauri commands
+│   │   │   ├── domain.rs
+│   │   │   ├── deploy.rs
+│   │   │   └── wallet.rs
+│   │   ├── main.rs        # Tauri main
+│   │   └── lib.rs
+│   ├── Cargo.toml
+│   └── tauri.conf.json
 └── package.json
 
-packages/core/
+packages/core/             # READ-ONLY
 ├── src/
-│   ├── walrus/            # YOU OWN THIS
-│   │   ├── binary-manager.ts  # Binary download/verification
-│   │   └── client.ts          # Walrus API client
-│   ├── sui/               # YOU OWN THIS
-│   │   └── index.ts       # Sui blockchain client
-│   ├── site/              # YOU OWN THIS
-│   │   └── index.ts       # Site building logic
-│   ├── config/            # YOU OWN THIS
-│   │   └── index.ts       # Config loading/validation
-│   └── logging/           # YOU OWN THIS
-│       └── index.ts       # Shared logger
-└── package.json
-=======
-### Project Structure (Monorepo)
-
-The project is organized as a pnpm workspace:
-
-- **`packages/core`**: Core logic and shared utilities.
-  - `src/walrus/`: Walrus interactions and binary management.
-  - `src/sui/`: Sui blockchain interactions.
-  - `src/config/`: Configuration handling.
-  - `src/site/`: Site-specific logic.
-- **`apps/cli`**: Command-line interface.
-  - Depends on `@walrus/core`.
-  - Uses `commander` for command parsing.
-- **`apps/desktop`**: Tauri-based desktop application (In progress).
-
-```
-packages/core/src/
-├── walrus/            # binary management & wrappers
-├── sui/               # Sui client & interactions
-├── config/            # Configuration loading/generation
-├── site/              # Site deployment logic
-├── logging/           # Centralized logging
-└── index.ts           # Public API
-
-apps/cli/
-├── bin/               # Executable entry point
-└── src/               # Command implementations
->>>>>>> Stashed changes
+│   ├── walrus/           # Import from here
+│   ├── sui/              # Import from here
+│   ├── site/             # Import from here
+│   └── config/           # Import from here
 ```
 
-### MVP Scope (Option B)
-1. `walrus init` - Interactive setup wizard
-2. `walrus deploy` - Deploy/update websites using `site-builder` wrapper (Publish/Update logic)
-3. `walrus versions --list/--rollback` - Version management
-4. `walrus diagnose` - System health checks
+### Your MVP Scope
+1. `walrus domain` - Tauri UI for SuiNS domain management
+2. Deployment dashboard - View deployment history
+3. Version rollback UI - Visual rollback interface
+4. Settings panel - Wallet/network management
 
-**Note:** Domain management (`walrus domain`) is Desktop team's scope.
+**Note:** Core CLI commands (`init`, `deploy`, `versions`) are CLI team's scope.
 
-## Integration Strategy (Best Practices)
+## Using Core Package (READ-ONLY)
 
-### Binary Management
-- **Resolution Order:**
-  1. System PATH (`site-builder`)
-  2. Local Cache (`~/.walrus/bin/site-builder`)
-- **Action:** If system binary exists, use it. If not, download managed version.
+**You can import but NEVER modify:**
 
-### Configuration & State
-- **Hybrid Model:**
-  - `walrus.config.json`: Static build config (dir, epochs)
-  - `.env`: Dynamic state (`WALRUS_SITE_OBJECT_ID`)
-- **Reasoning:** Improves DX by exposing Site ID to frontend code automatically.
-
-### Deployment Logic
-- **Wrap vs Reimplement:** Always prefer wrapping official binary commands (`publish`, `update`) over reimplementing complex logic (diffing, merkle trees).
-- **Pre-flight Check:** Always verify WAL balance before running `site-builder`. If balance is 0, offer to run `get-wal` (Suibase) or provide instructions.
-- **Parsing:** Use Regex to reliably extract data from CLI stdout.
-  - Pattern: `/New site object ID: (.+)/`
-
-## Common Patterns (from CCS)
-
-### CLI Command Structure
 ```typescript
-export async function initCommand(options: InitOptions): Promise<void> {
-  try {
-    validateOptions(options);
-    await runPreflightChecks();
-    await executeMainLogic(options);
-    displaySuccess();
-  } catch (error) {
-    handleError(error);
-  }
-}
-```
+// ✅ CORRECT - Import from core
+import { WalrusClient } from '@walruscli/core';
+import { loadConfig } from '@walruscli/core';
 
-### Error Handling
-```typescript
-class WalrusError extends Error {
-  constructor(
-    public code: string,
-    message: string,
-    public recoverable: boolean = false
-  ) {
-    super(message);
-  }
+// Rust backend uses core via CLI invocation
+#[tauri::command]
+async fn get_deployment_history() -> Result<Vec<Deployment>, String> {
+    // Call CLI commands or read ~/.walrus/* state
+    // DO NOT write to ~/.walrus/* files
 }
 
-// Usage
-throw new WalrusError('BINARY_NOT_FOUND', 'site-builder binary not found', true);
+// ❌ WRONG - Modify core files
+// Never edit packages/core/src/**
 ```
 
-### Multi-Step Progress
-```typescript
-import Listr from 'listr2';
-
-const tasks = new Listr([
-  { title: 'Detecting OS', task: async () => await detectOS() },
-  { title: 'Downloading binary', task: async () => await downloadBinary() },
-]);
-
-await tasks.run();
-```
+**If you need core changes:**
+1. Create issue: "Request: Add `getDeploymentHistory()` to core"
+2. Tag CLI team
+3. Wait for implementation
+4. Import the new API
 
 ## Security Requirements
 
-1. **Never log sensitive data** - Private keys, passwords
-2. **Encrypt keystore** - AES-256-CBC with PBKDF2
-3. **File permissions** - Keystore files `0600`
-4. **Input validation** - Sanitize before shell execution
-5. **No hardcoded secrets** - Use environment variables
+1. **Never store private keys in frontend state** - Use Tauri secure storage
+2. **Sanitize user inputs** - Prevent XSS
+3. **Validate data from Rust backend** - Don't trust implicitly
+4. **Use Tauri's permission system** - Restrict filesystem access
 
 ## Pre-Commit Checklist
 
@@ -256,78 +203,180 @@ await tasks.run();
 - [ ] `npm run validate` - All checks pass
 
 **Code:**
-- [ ] Conventional commit format (`feat(cli):`, `feat(core):`)
+- [ ] Conventional commit format (`feat(desktop):`)
 - [ ] Tests added/updated if behavior changed
 - [ ] No `any` types, no non-null assertions
-- [ ] ASCII only (no emojis)
-- [ ] No modifications to `apps/desktop/**`
+- [ ] Tailwind CSS only (no inline styles)
+- [ ] No modifications to `apps/cli/**` or `packages/core/**`
 
 **Coordination:**
-- [ ] If `packages/core/` API changed, notify Desktop team
-- [ ] If breaking change, document in commit message
+- [ ] If you need core API changes, create issue for CLI team
+- [ ] Document dependencies in commit message
 
 ## Commit Message Format
 
 ```bash
-# CLI changes
-feat(cli): add init command with interactive wizard
-fix(cli): handle missing binary gracefully
+# Desktop changes only
+feat(desktop): add domain registration form
+fix(desktop): handle network errors in dashboard
 
-# Core changes
-feat(core): add WalrusBinaryManager class
-fix(core): prevent race condition in config loader
-
-# Both
-feat(cli,core): implement encrypted keystore with AES-256
+# Tauri backend
+feat(desktop/tauri): add Rust command for SuiNS lookup
+fix(desktop/tauri): prevent race condition in wallet load
 ```
 
 ## Daily Workflow
 
 1. **Start day:**
    ```bash
-   git checkout feature/cli-implementation
-   git pull origin feature/cli-implementation
+   git checkout feature/desktop-ui
+   git pull origin feature/desktop-ui
    git merge origin/main  # Get latest from main
    ```
 
 2. **During work:**
-   - Focus on `apps/cli/**` and `packages/core/**`
-   - Check `apps/cli/BRANCH_README.md` for task list
-   - Run tests frequently: `npm test`
+   - Focus ONLY on `apps/desktop/**`
+   - Import from `packages/core/` but never modify
+   - Check `apps/desktop/BRANCH_README.md` for task list
+   - Run Tauri dev: `cd apps/desktop && npm run tauri dev`
 
 3. **Before commit:**
    ```bash
    npm run format
    npm run lint:fix
    npm run validate  # MUST PASS
-   git add .
-   git commit -m "feat(cli): descriptive message"
+   git add apps/desktop/
+   git commit -m "feat(desktop): descriptive message"
    ```
 
 4. **End of day:**
    ```bash
-   git push origin feature/cli-implementation
+   git push origin feature/desktop-ui
    ```
 
 5. **Weekly sync:**
    - Merge `main` into your branch to stay updated
-   - Coordinate with Desktop team on `packages/core/` changes
+   - Coordinate with CLI team on needed core API changes
+
+## Common Patterns
+
+### Tauri Command Definition (Rust)
+```rust
+// src-tauri/src/commands/domain.rs
+#[tauri::command]
+pub async fn lookup_suins_domain(name: String) -> Result<DomainInfo, String> {
+    // Call CLI or use core library
+    let domain = walrus_cli::lookup_domain(&name)
+        .map_err(|e| e.to_string())?;
+    
+    Ok(DomainInfo {
+        name: domain.name,
+        owner: domain.owner,
+        expires_at: domain.expires_at,
+    })
+}
+```
+
+### React Component with Tauri
+```typescript
+// src/components/DomainManager/DomainForm.tsx
+import { invoke } from '@tauri-apps/api/tauri';
+
+export const DomainForm: React.FC = () => {
+  const [name, setName] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<DomainInfo | null>(null);
+
+  const handleLookup = async () => {
+    setLoading(true);
+    try {
+      const info = await invoke<DomainInfo>('lookup_suins_domain', { name });
+      setResult(info);
+    } catch (error) {
+      console.error('Lookup failed:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <input
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        className="border rounded px-4 py-2"
+        placeholder="Enter domain name"
+      />
+      <button
+        onClick={handleLookup}
+        disabled={loading}
+        className="bg-blue-500 text-white px-4 py-2 rounded"
+      >
+        {loading ? 'Looking up...' : 'Lookup'}
+      </button>
+      {result && <DomainInfo data={result} />}
+    </div>
+  );
+};
+```
+
+## UI/UX Guidelines
+
+**Reference:** `./docs/design-guidelines.md` and `./docs/wireframes/`
+
+### Design Principles:
+1. **Clean and minimal** - Avoid clutter
+2. **Responsive** - Works on different screen sizes
+3. **Consistent** - Use shared components
+4. **Accessible** - ARIA labels, keyboard navigation
+5. **Loading states** - Show feedback for async operations
+
+### Tailwind CSS Standards:
+```typescript
+// ✅ CORRECT - Semantic spacing, consistent colors
+<div className="space-y-4 p-6 bg-gray-50 rounded-lg">
+  <h2 className="text-xl font-semibold text-gray-900">Domain Manager</h2>
+  <button className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">
+    Register
+  </button>
+</div>
+
+// ❌ WRONG - Inline styles, magic numbers
+<div style={{ padding: '23px', backgroundColor: '#f0f0f0' }}>
+  <h2 style={{ fontSize: '19px', fontWeight: 600 }}>Domain Manager</h2>
+</div>
+```
+
+## Testing
+
+```bash
+# Frontend tests (Vitest + React Testing Library)
+npm test
+
+# Tauri tests (Rust)
+cd apps/desktop/src-tauri
+cargo test
+
+# E2E tests (Playwright - optional for MVP)
+npm run test:e2e
+```
 
 ## Questions?
 
-1. **Task breakdown:** Check `./apps/cli/BRANCH_README.md`
-2. **Code patterns:** Check `./ccs/` reference codebase
-3. **Requirements:** See `./docs/requirements/PRD.md` and `./docs/requirements/main_function.md`
-4. **Architecture:** See `./plans/reports/brainstorm-260117-0855-walruscli-ccs-reference-mapping.md`
+1. **Task breakdown:** Check `./apps/desktop/BRANCH_README.md`
+2. **Core APIs:** Check `packages/core/src/` (read-only)
+3. **Requirements:** See `./docs/requirements/PRD.md`
+4. **Design:** See `./docs/design-guidelines.md` and `./docs/wireframes/`
 5. **Standards:** See `./AGENTS.md`
 6. **Team workflow:** See `./docs/TEAM_WORKFLOW.md`
+7. **Tauri docs:** https://tauri.app/v2/
 
 ## Remember
 
-**You are building the CLI application and owning the core business logic.**
+**You are building the Desktop UI that consumes CLI team's core APIs.**
 
-Desktop team depends on your `packages/core/` APIs being stable and well-documented. Prioritize:
-1. **Clean API design** - They'll consume your interfaces
-2. **Thorough testing** - Bugs affect both teams
-3. **Clear documentation** - TSDoc comments for all exported functions
-4. **Stable releases** - Avoid breaking changes after Week 3
+Your role is to create a beautiful, intuitive interface for domain management and deployment visualization. Respect the division of labor:
+- **CLI team:** Core business logic, CLI commands, `packages/core/`
+- **Desktop team (YOU):** Tauri app, React UI, visual components
+
+**Never modify `packages/core/` or `apps/cli/`.** Request changes via issues.

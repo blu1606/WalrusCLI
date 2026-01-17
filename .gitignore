@@ -2,8 +2,11 @@
 ccs
 repomix-output.xml
 walrus-sites-deploy
+CLAUDE.md
+BRANCH_README.md
 
 # --- Node.js & pnpm ---
+
 node_modules
 pnpm-debug.log*
 .pnpm-debug.log*
